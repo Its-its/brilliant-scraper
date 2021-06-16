@@ -65,7 +65,7 @@ async fn step_1_grab_all_contributions() -> Result<Vec<CommunityListContribution
 
 		next_page_url = list.next_page_path;
 
-		tokio::time::sleep(Duration::from_millis(500)).await;
+		tokio::time::sleep(Duration::from_millis(1000)).await;
 	}
 
 	// Too lazy to stream data to file.
@@ -124,7 +124,7 @@ async fn step_2_scrape_contributions(contributions: Vec<CommunityListContributio
 			save_data_to_directory(&url, problem.html.as_bytes()).await?;
 		}
 
-		tokio::time::sleep(Duration::from_millis(500)).await;
+		tokio::time::sleep(Duration::from_millis(1000)).await;
 	}
 
 	Ok(())
