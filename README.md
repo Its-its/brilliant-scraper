@@ -9,12 +9,12 @@ Side Note: Unknown if this is all of them. But this is where mine ended.
 
 ## To run scraper (use cmd/terminal)
 ```bash
-./fileName scrape
+./scrape-brilliant scrape
 ```
 
 ## To run web server (use cmd/terminal)
 ```bash
-./fileName web
+./scrape-brilliant web
 ```
 
 The webserver is used for viewing what you scraped easily.
