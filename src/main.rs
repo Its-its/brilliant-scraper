@@ -52,8 +52,10 @@ async fn step_1_grab_all_contributions() -> Result<Vec<CommunityListContribution
 		"https://brilliant.org/community/home/problems/new/all/all/?&deferred=true&page_key=community_portal_problems&version=1",
 		// "Needs Solution" Contributions
 		"https://brilliant.org/community/home/need-solution/all/all/?&deferred=true&page_key=community_portal_problems&version=1",
-		// "Discussions" Contributions
-		"https://brilliant.org/community/home/discussions/popular/all/?&deferred=true&page_key=community_portal_problems&version=1"
+		// "Discussions Popular" Contributions
+		"https://brilliant.org/community/home/discussions/popular/all/?&deferred=true&page_key=community_portal_problems&version=1",
+		// "Discussions New" Contributions
+		"https://brilliant.org/community/home/discussions/new/all/?&deferred=true&page_key=community_portal_problems&version=1"
 	];
 
 	let mut found: Vec<CommunityListContribution> = Vec::new();
