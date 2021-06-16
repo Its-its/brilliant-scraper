@@ -24,6 +24,8 @@ The webserver is used for viewing what you scraped easily.
 
 If you'd like to compile and run it instead of using the pre-made exe you can easily.
 
+Download the repository by clicking the green button and clicking "Download Zip".
+
 Installing Rust is super simple.
 ```
 https://www.rust-lang.org/tools/install
