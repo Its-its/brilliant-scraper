@@ -5,6 +5,7 @@ use reqwest::{Client, header::HeaderMap};
 mod files;
 mod requesting;
 mod scraping;
+mod web;
 
 use files::*;
 use requesting::*;
@@ -13,10 +14,26 @@ use scraping::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-	println!("Executing Step 1: Grabbing ALL Contribution URLS and caching.");
-	let contributions = step_1_grab_all_contributions().await?;
+	match std::env::args().last().as_deref() {
+		Some("web") => {
+			web::start().await?;
+		}
 
-	step_2_scrape_contributions(contributions).await?;
+		Some("scrape") => {
+			println!("Executing Scraper in 5 seconds. If this is an error Ctrl-C now.");
+			tokio::time::sleep(Duration::from_secs(5)).await;
+
+			println!("Executing Step 1: Grabbing ALL Contribution URLS and caching.");
+
+			let contributions = step_1_grab_all_contributions().await?;
+
+			println!("Executing Step 2: Scraping all contributions and placing them in archive folder.");
+
+			step_2_scrape_contributions(contributions).await?;
+		}
+
+		_ => panic!(r#"Please specify either "web" or "scrape" by doing "./executableName scrape""#)
+	}
 
 	Ok(())
 }
