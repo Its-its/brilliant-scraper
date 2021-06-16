@@ -1,4 +1,4 @@
-use std::{io::Read, time::Duration};
+use std::time::Duration;
 
 use reqwest::{Client, header::HeaderMap};
 
@@ -76,17 +76,6 @@ async fn step_1_grab_all_contributions() -> Result<Vec<CommunityListContribution
 
 async fn step_2_scrape_contributions(contributions: Vec<CommunityListContribution>) -> Result<(), Box<dyn std::error::Error>> {
 	create_save_directory().await?;
-
-	let contributions = vec![
-		CommunityListContribution {
-			title: String::new(),
-			topic: String::new(),
-			popularity: String::new(),
-			difficulty: String::new(),
-			url: "https://brilliant.org/problems/arbitrary-points/".to_string(),
-		}
-	];
-
 
 	for contribution in contributions {
 		let mut problem = contribution.scrape_problem().await?;
