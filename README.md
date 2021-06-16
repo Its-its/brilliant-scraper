@@ -16,3 +16,5 @@ Side Note: Unknown if this is all of them. But this is where mine ended.
 ```bash
 ./fileName web
 ```
+
+The webserver is used for viewing what you scraped easily.
