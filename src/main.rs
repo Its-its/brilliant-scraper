@@ -14,8 +14,9 @@ use scraping::*;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
 	println!("Executing Step 1: Grabbing ALL Contribution URLS and caching.");
-	let _ = step_1_grab_all_contributions().await?;
+	let contributions = step_1_grab_all_contributions().await?;
 
+	step_2_scrape_contributions(contributions).await?;
 
 	Ok(())
 }
@@ -56,7 +57,41 @@ async fn step_1_grab_all_contributions() -> Result<Vec<CommunityListContribution
 	Ok(found)
 }
 
+async fn step_2_scrape_contributions(contributions: Vec<CommunityListContribution>) -> Result<(), Box<dyn std::error::Error>> {
+	create_save_directory().await?;
 
+	for contribution in contributions {
+		let problem = contribution.scrape_problem().await?;
+
+		// Save Styles.
+		for style_url in problem.styles {
+			if !does_data_url_exist(&style_url).await? {
+				let data = reqwest::get(&style_url)
+					.await?
+					.text()
+					.await?;
+
+				save_data_to_directory(&style_url, data.as_bytes()).await?;
+			}
+		}
+
+		if !does_data_url_exist(&contribution.url).await? {
+			let mut url = contribution.url.clone();
+
+			// Fix url so it ends with "".html".
+			if url.ends_with('/') {
+				url.pop();
+				url.push_str(".html");
+			}
+
+			save_data_to_directory(&url, &problem.html).await?;
+		}
+
+		tokio::time::sleep(Duration::from_millis(500)).await;
+	}
+
+	Ok(())
+}
 
 fn default_headers() -> HeaderMap {
 	use reqwest::header::*;
