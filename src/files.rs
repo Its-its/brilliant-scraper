@@ -47,11 +47,30 @@ pub async fn does_data_url_exist(url: &str) -> Result<bool, Box<dyn std::error::
 }
 
 
-pub async fn save_data_to_directory(url: &str, contents: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn save_data_to_directory(url: &str, contents: &[u8]) -> Result<Option<String>, Box<dyn std::error::Error>> {
+	// We'll need to fix the external url to save it locally.
+	let mut external_url_correction = None;
+
 	let url: Url = url.parse()?;
 
 	let mut path = PathBuf::from_str(SAVE_DIRECTORY_PATH)?;
+
+	if !url.host_str().unwrap().contains("brilliant.org") {
+		let mut host_fix = url.host_str().unwrap().replace('.', "_");
+
+		path.push(&host_fix);
+
+		host_fix.insert(0, '/');
+		external_url_correction = Some(host_fix);
+	}
+
 	path.push(&url.path()[1..]);
+
+	// Add path to external url correction.
+	if let Some(host) = external_url_correction.as_mut() {
+		host.push_str(url.path());
+	}
+
 
 	let directory_path = path.parent().expect("no directory.");
 
@@ -62,5 +81,5 @@ pub async fn save_data_to_directory(url: &str, contents: &[u8]) -> Result<(), Bo
 
 	tokio::fs::write(path, contents).await?;
 
-	Ok(())
+	Ok(external_url_correction)
 }

@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{io::Read, time::Duration};
 
 use reqwest::{Client, header::HeaderMap};
 
@@ -77,8 +77,21 @@ async fn step_1_grab_all_contributions() -> Result<Vec<CommunityListContribution
 async fn step_2_scrape_contributions(contributions: Vec<CommunityListContribution>) -> Result<(), Box<dyn std::error::Error>> {
 	create_save_directory().await?;
 
+	let contributions = vec![
+		CommunityListContribution {
+			title: String::new(),
+			topic: String::new(),
+			popularity: String::new(),
+			difficulty: String::new(),
+			url: "https://brilliant.org/problems/arbitrary-points/".to_string(),
+		}
+	];
+
+
 	for contribution in contributions {
-		let problem = contribution.scrape_problem().await?;
+		let mut problem = contribution.scrape_problem().await?;
+
+		println!("{:#?}", problem.images);
 
 		// Save Styles.
 		for style_url in problem.styles {
@@ -92,8 +105,26 @@ async fn step_2_scrape_contributions(contributions: Vec<CommunityListContributio
 			}
 		}
 
+		// Save Images
+		for image_path in problem.images {
+			let image_url = correct_url(image_path.clone());
+
+			if !does_data_url_exist(&image_url).await? {
+				let data = reqwest::get(&image_url)
+					.await?
+					.bytes()
+					.await?;
+
+				// Replace external image with downloaded one.
+				if let Some(local_path) = save_data_to_directory(&image_url, &data).await? {
+					problem.html = problem.html.replace(&image_path, &local_path);
+				}
+			}
+		}
+
+
 		if !does_data_url_exist(&contribution.url).await? {
-			let mut url = contribution.url.clone();
+			let mut url = contribution.url;
 
 			// Fix url so it ends with "".html".
 			if url.ends_with('/') {
@@ -101,7 +132,7 @@ async fn step_2_scrape_contributions(contributions: Vec<CommunityListContributio
 				url.push_str(".html");
 			}
 
-			save_data_to_directory(&url, &problem.html).await?;
+			save_data_to_directory(&url, problem.html.as_bytes()).await?;
 		}
 
 		tokio::time::sleep(Duration::from_millis(500)).await;
@@ -132,4 +163,14 @@ fn default_headers() -> HeaderMap {
 
 
 	header_map
+}
+
+pub fn correct_url(mut value: String) -> String {
+	if value.starts_with("//") {
+		value.insert_str(0, "https:");
+	} else if value.starts_with('/') {
+		value.insert_str(0, "https://brilliant.org");
+	}
+
+	value
 }
