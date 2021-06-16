@@ -1,3 +1,4 @@
+use serde::{Serialize, Deserialize};
 use scraper_macros::Scraper;
 use scraper_main::ConvertFromValue;
 
@@ -5,7 +6,7 @@ use scraper_main::ConvertFromValue;
 #[derive(Debug, Scraper)]
 pub struct CommunityList {
     #[scrape(xpath = r#"//div[contains(@class, "nf-feed-item-wrapper")]"#)]
-	pub contributions: Vec<CommunityContribution>,
+	pub contributions: Vec<CommunityListContribution>,
 
 	#[scrape(xpath = r#"//a/@data-next_url"#)]
 	#[scrape(transform = "transform_next_page_url")]
@@ -13,8 +14,8 @@ pub struct CommunityList {
 }
 
 
-#[derive(Debug, Scraper)]
-pub struct CommunityContribution {
+#[derive(Debug, Scraper, Serialize, Deserialize)]
+pub struct CommunityListContribution {
 	#[scrape(xpath = r#"./div/a/span/text()"#)]
 	#[scrape(transform = "transform_trim")]
 	title: String,
@@ -35,6 +36,13 @@ pub struct CommunityContribution {
 	#[scrape(transform = "transform_str")]
 	url: String
 }
+
+
+// #[derive(Debug, Scraper, Serialize, Deserialize)]
+// pub struct ContributionProgram {
+// 	#[scrape(xpath = r#"//div[@class="question-text latex"]/"#)]
+// 	html: String,
+// }
 
 
 

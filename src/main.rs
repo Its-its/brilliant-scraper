@@ -2,42 +2,60 @@ use std::time::Duration;
 
 use reqwest::{Client, header::HeaderMap};
 
-
+mod files;
 mod requesting;
 mod scraping;
 
+use files::*;
 use requesting::*;
 use scraping::*;
 
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-	println!("Hello, world!");
+	println!("Executing Step 1: Grabbing ALL Contribution URLS and caching.");
+	let _ = step_1_grab_all_contributions().await?;
 
-	let mut found: Vec<CommunityContribution> = Vec::new();
 
-	let mut next_page_path = Some("https://brilliant.org/community/home/problems/popular/all/all/?&deferred=true&page_key=community_portal_problems&version=1".to_string());
+	Ok(())
+}
+
+
+async fn step_1_grab_all_contributions() -> Result<Vec<CommunityListContribution>, Box<dyn std::error::Error>> {
+	if does_contributions_file_exist().await {
+		println!(" - Contributions File already exists. Using it.");
+		return read_contributions_file().await;
+	}
+
+	let mut found: Vec<CommunityListContribution> = Vec::new();
+
+	let mut next_page_url = Some(
+		"https://brilliant.org/community/home/problems/popular/all/all/?&deferred=true&page_key=community_portal_problems&version=1".to_string()
+	);
 
 	let client = Client::builder()
 		.default_headers(default_headers())
 		.cookie_store(true)
 		.build()?;
 
-	while let Some(next_page) = next_page_path {
-		let mut res = scrape_community_url(&next_page, &client).await?;
+	while let Some(next_page) = next_page_url.take() {
+		let mut list = scrape_community_url(&next_page, &client).await?;
 
-		found.append(&mut res.contributions);
+		found.append(&mut list.contributions);
 
 		println!("Found: {}", found.len());
 
-		next_page_path = res.next_page_path;
+		next_page_url = list.next_page_path;
 
-		tokio::time::sleep(Duration::from_secs(1)).await;
+		tokio::time::sleep(Duration::from_millis(500)).await;
 	}
 
+	// Too lazy to stream data to file.
+	save_contributions_file(&found).await?;
 
-	Ok(())
+	Ok(found)
 }
+
 
 
 fn default_headers() -> HeaderMap {
