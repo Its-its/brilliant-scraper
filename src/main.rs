@@ -45,31 +45,42 @@ async fn step_1_grab_all_contributions() -> Result<Vec<CommunityListContribution
 		return read_contributions_file().await;
 	}
 
+	let problem_urls = vec![
+		// "Popular" Contributions
+		"https://brilliant.org/community/home/problems/popular/all/all/?&deferred=true&page_key=community_portal_problems&version=1",
+		// "New" Contributions
+		"https://brilliant.org/community/home/problems/new/all/all/?&deferred=true&page_key=community_portal_problems&version=1",
+		// "Needs Solution" Contributions
+		"https://brilliant.org/community/home/need-solution/all/all/?&deferred=true&page_key=community_portal_problems&version=1",
+		// "Discussions" Contributions
+		"https://brilliant.org/community/home/discussions/popular/all/?&deferred=true&page_key=community_portal_problems&version=1"
+	];
+
 	let mut found: Vec<CommunityListContribution> = Vec::new();
 
-	let mut next_page_url = Some(
-		"https://brilliant.org/community/home/problems/popular/all/all/?&deferred=true&page_key=community_portal_problems&version=1".to_string()
-	);
+	for problem_list_url in problem_urls {
+		let mut next_page_url = Some(problem_list_url.to_string());
 
-	let client = Client::builder()
-		.default_headers(default_headers())
-		.cookie_store(true)
-		.build()?;
+		let client = Client::builder()
+			.default_headers(default_headers())
+			.cookie_store(true)
+			.build()?;
 
-	while let Some(next_page) = next_page_url.take() {
-		let mut list = scrape_community_url(&next_page, &client).await?;
+		while let Some(next_page) = next_page_url.take() {
+			let mut list = scrape_community_url(&next_page, &client).await?;
 
-		found.append(&mut list.contributions);
+			found.append(&mut list.contributions);
 
-		println!("Found: {}", found.len());
+			println!("Found: {} -- {:?}", found.len(), list.next_page_path);
 
-		next_page_url = list.next_page_path;
+			next_page_url = list.next_page_path;
 
-		tokio::time::sleep(Duration::from_millis(1000)).await;
+			tokio::time::sleep(Duration::from_millis(1000)).await;
+		}
+
+		// Too lazy to stream data to file.
+		save_contributions_file(&found).await?;
 	}
-
-	// Too lazy to stream data to file.
-	save_contributions_file(&found).await?;
 
 	Ok(found)
 }
