@@ -40,11 +40,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
 async fn step_1_grab_all_contributions() -> Result<Vec<CommunityListContribution>, Box<dyn std::error::Error>> {
-	if does_contributions_file_exist().await {
-		println!(" - Contributions File already exists. Using it.");
-		return read_contributions_file().await;
-	}
-
 	let problem_urls = vec![
 		// "Popular" Contributions
 		"https://brilliant.org/community/home/problems/popular/all/all/?&deferred=true&page_key=community_portal_problems&version=1",
@@ -58,7 +53,14 @@ async fn step_1_grab_all_contributions() -> Result<Vec<CommunityListContribution
 		"https://brilliant.org/community/home/discussions/new/all/?&deferred=true&page_key=community_portal_problems&version=1"
 	];
 
-	let mut found: Vec<CommunityListContribution> = Vec::new();
+
+	let mut found: Vec<CommunityListContribution> = if does_contributions_file_exist().await {
+		println!(" - Contributions File already exists. Using it and checking if we're missing any problem pages.");
+		read_contributions_file().await?
+	} else {
+		Vec::new()
+	};
+
 
 	let client = Client::builder()
 		.default_headers(default_headers())
@@ -66,10 +68,23 @@ async fn step_1_grab_all_contributions() -> Result<Vec<CommunityListContribution
 		.build()?;
 
 	for (i, problem_list_url) in problem_urls.into_iter().enumerate() {
+		let mut should_skip_checked = false;
+
 		let mut next_page_url = Some(problem_list_url.to_string());
 
 		while let Some(next_page) = next_page_url.take() {
 			let mut list = scrape_community_url(&next_page, &client).await?;
+
+			if !should_skip_checked {
+				// If our cache already contains one of the URLs break out of the while loop.
+				if let Some(found_cont) = list.contributions.first() {
+					if found.iter().any(|v| v.url == found_cont.url ) {
+						break;
+					}
+
+					should_skip_checked = true;
+				}
+			}
 
 			// "Need Solution" Popularity/Difficulty mix-up fix.
 			if i == 2 {
