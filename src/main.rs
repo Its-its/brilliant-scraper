@@ -142,8 +142,10 @@ async fn step_2_scrape_contributions(contributions: Vec<CommunityListContributio
 				url.push_str(".html");
 			}
 
-			// Show hidden comments
-			problem.html = problem.html.replace("hide\" data-level", "\" data-level");
+			// Show hidden comments in discussion threads since we don't download the Javascript.
+			if url.contains("discussions/thread") {
+				problem.html = problem.html.replace(r#"hide" data-level"#, r#"" data-level"#);
+			}
 
 			save_data_to_directory(&url, problem.html.as_bytes()).await?;
 		}
