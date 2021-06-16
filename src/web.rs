@@ -4,7 +4,7 @@ use actix_web::{App, HttpServer};
 
 
 pub async fn start() -> std::io::Result<()> {
-	println!("Starting Website on 0.0.0.0:6533");
+	println!("Starting Website on 127.0.0.1:6533");
 
 	actix_web::rt::System::new("web::start")
 		.block_on(async move {
@@ -12,7 +12,7 @@ pub async fn start() -> std::io::Result<()> {
 				App::new()
 				.service(Files::new("/", "./archive").show_files_listing())
 			)
-				.bind("0.0.0.0:6533")?
+				.bind("127.0.0.1:6533")?
 				.run()
 				.await
 		})
