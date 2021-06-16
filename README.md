@@ -29,12 +29,12 @@ Installing Rust is super simple.
 https://www.rust-lang.org/tools/install
 ```
 
-After its' installed. Run the command in the main directory (it contains src, Cargo.toml, etc..):
+After its installed. Run the command in the main directory (it contains src, Cargo.toml, etc..):
 ```bash
 cargo build
 ```
 
-After its' built you can run it with these two commands.
+After its built you can run it with these two commands.
 ```bash
 cargo run -- web
 ```
