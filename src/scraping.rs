@@ -28,12 +28,12 @@ pub struct CommunityListContribution {
 	pub topic: String,
 
 	#[scrape(xpath = r#"./div/span[2]/text()"#)]
-	#[scrape(transform = "transform_trim")]
-	pub popularity: String,
+	#[scrape(transform = "transform_trim_opt")]
+	pub popularity: Option<String>,
 
 	#[scrape(xpath = r#"./div/span[3]/text()"#)]
-	#[scrape(transform = "transform_trim")]
-	pub difficulty: String,
+	#[scrape(transform = "transform_trim_opt")]
+	pub difficulty: Option<String>,
 
 	#[scrape(xpath = r#"./div/a/@href"#)]
 	#[scrape(transform = "transform_url")]
@@ -79,6 +79,10 @@ fn transform_html(_: Option<String>) -> String {
 	String::new()
 }
 
+
+fn transform_trim_opt(value: Option<String>) -> Option<String> {
+	value.map(|v| v.trim().to_string())
+}
 
 fn transform_trim(value: String) -> String {
 	value.trim().to_string()

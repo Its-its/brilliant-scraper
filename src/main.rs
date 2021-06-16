@@ -65,11 +65,19 @@ async fn step_1_grab_all_contributions() -> Result<Vec<CommunityListContribution
 		.cookie_store(true)
 		.build()?;
 
-	for problem_list_url in problem_urls {
+	for (i, problem_list_url) in problem_urls.into_iter().enumerate() {
 		let mut next_page_url = Some(problem_list_url.to_string());
 
 		while let Some(next_page) = next_page_url.take() {
 			let mut list = scrape_community_url(&next_page, &client).await?;
+
+			// "Need Solution" Popularity/Difficulty mix-up fix.
+			if i == 2 {
+				list.contributions.iter_mut()
+				.for_each(|v| {
+					v.difficulty = v.popularity.take();
+				});
+			}
 
 			found.append(&mut list.contributions);
 
