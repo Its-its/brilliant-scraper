@@ -58,13 +58,13 @@ async fn step_1_grab_all_contributions() -> Result<Vec<CommunityListContribution
 
 	let mut found: Vec<CommunityListContribution> = Vec::new();
 
+	let client = Client::builder()
+		.default_headers(default_headers())
+		.cookie_store(true)
+		.build()?;
+
 	for problem_list_url in problem_urls {
 		let mut next_page_url = Some(problem_list_url.to_string());
-
-		let client = Client::builder()
-			.default_headers(default_headers())
-			.cookie_store(true)
-			.build()?;
 
 		while let Some(next_page) = next_page_url.take() {
 			let mut list = scrape_community_url(&next_page, &client).await?;
@@ -131,6 +131,9 @@ async fn step_2_scrape_contributions(contributions: Vec<CommunityListContributio
 				url.pop();
 				url.push_str(".html");
 			}
+
+			// Show hidden comments
+			problem.html = problem.html.replace("hide\" data-level", "\" data-level");
 
 			save_data_to_directory(&url, problem.html.as_bytes()).await?;
 		}
