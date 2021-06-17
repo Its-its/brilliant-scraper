@@ -140,10 +140,26 @@ async fn step_1_grab_all_contributions() -> Result<Vec<CommunityListContribution
 	Ok(found)
 }
 
-async fn step_2_scrape_contributions(contributions: Vec<CommunityListContribution>) -> Result<(), Box<dyn std::error::Error>> {
+async fn step_2_scrape_contributions(mut contributions: Vec<CommunityListContribution>) -> Result<(), Box<dyn std::error::Error>> {
 	create_save_directory().await?;
 
-	for contribution in contributions {
+	let should_skip_already_made_html_files = std::env::args().any(|v| &v == "skip-downloaded-html-files");
+
+	while let Some(contribution) = contributions.pop() {
+		let mut corrected_html_url = contribution.url.clone();
+
+		// Fix url so it ends with ".html".
+		if corrected_html_url.ends_with('/') {
+			corrected_html_url.pop();
+			corrected_html_url.push_str(".html");
+		}
+
+		let does_html_file_exist = does_data_url_exist(&corrected_html_url).await?;
+
+		if should_skip_already_made_html_files && does_html_file_exist {
+			continue;
+		}
+
 		let mut problem = contribution.scrape_problem().await?;
 
 		println!("Archiving: {}", contribution.url);
@@ -181,22 +197,9 @@ async fn step_2_scrape_contributions(contributions: Vec<CommunityListContributio
 			}
 		}
 
-
-		if !does_data_url_exist(&contribution.url).await? {
-			let mut url = contribution.url;
-
-			// Fix url so it ends with "".html".
-			if url.ends_with('/') {
-				url.pop();
-				url.push_str(".html");
-			}
-
-			// Show hidden comments in discussion threads since we don't download the Javascript.
-			if url.contains("discussions/thread") {
-				problem.html = problem.html.replace(r#"hide" data-level"#, r#"" data-level"#);
-			}
-
-			save_data_to_directory(&url, problem.html.as_bytes()).await?;
+		// Save Webpage
+		if !does_html_file_exist {
+			save_data_to_directory(&corrected_html_url, problem.html.as_bytes()).await?;
 		}
 
 		tokio::time::sleep(Duration::from_millis(1000)).await;
