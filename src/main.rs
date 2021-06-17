@@ -89,11 +89,12 @@ async fn step_1_grab_all_contributions() -> Result<Vec<CommunityListContribution
 				}
 			});
 
-			if !should_skip_checked {
+			// (i) Skip the check for "Need Solution"
+			if !should_skip_checked && i != 2 {
 				// If our cache already contains one of the URLs break out of the while loop and continue.
 				if let Some(found_cont) = list.contributions.first() {
-					if found.iter().any(|v| v.url == found_cont.url) {
-						println!(" - - Already cached: {:?}", next_page);
+					if let Some((index, found)) = found.iter().enumerate().find(|(_, v)| v.url == found_cont.url) {
+						println!(" - - Already cached: {:?}\n\t\t => [{}]: {:?}", next_page, index, found.url);
 						continue 'base;
 					}
 
@@ -107,15 +108,23 @@ async fn step_1_grab_all_contributions() -> Result<Vec<CommunityListContribution
 				.for_each(|v| {
 					v.difficulty = v.popularity.take();
 				});
-			}
 
-			found.append(&mut list.contributions);
+				// Need Solution returns some which are in New/Popular so we're going to check each one of these just in-case.
+				// Intensive? I know.
+				for item in list.contributions {
+					if !found.iter().any(|v| v.url == item.url) {
+						found.push(item);
+					}
+				}
+			} else {
+				found.append(&mut list.contributions);
+			}
 
 			println!("Found: {} -- {:?}", found.len(), list.next_page_path);
 
 			next_page_url = list.next_page_path;
 
-			tokio::time::sleep(Duration::from_millis(1000)).await;
+			tokio::time::sleep(Duration::from_millis(500)).await;
 		}
 
 		// Too lazy to stream data to file.
