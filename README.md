@@ -15,6 +15,7 @@ or
 ```
 You can use the arg "no-cache-check" to disable the saved cache checking. If you're using my contributions.cache I recommend using this arg.
 
+You can use the arg "skip-downloaded-html-files" to skip re-checking of already downloaded html files. Useful if you stop-and-restart.
 
 ## To run web server (use cmd/terminal)
 ```bash
