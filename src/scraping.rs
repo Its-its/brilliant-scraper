@@ -20,8 +20,14 @@ pub struct CommunityList {
 #[derive(Debug, Scraper, Serialize, Deserialize)]
 pub struct CommunityListContribution {
 	#[scrape(xpath = r#"./div/a/span/text()"#)]
-	#[scrape(transform = "transform_trim")]
+	#[scrape(transform = "transform_title")]
 	pub title: String,
+
+	// My Xpath Parser currently doesn't support OR. So i'm just seperating it into two and combining.
+	#[scrape(xpath = r#"./div/a/text()"#)]
+	#[scrape(transform = "transform_title2")]
+	#[serde(skip)]
+	pub _title_alt: Vec<String>,
 
 	#[scrape(xpath = r#"./div/span[1]/text()"#)]
 	#[scrape(transform = "transform_trim")]
@@ -30,6 +36,12 @@ pub struct CommunityListContribution {
 	#[scrape(xpath = r#"./div/span[2]/text()"#)]
 	#[scrape(transform = "transform_trim_opt")]
 	pub popularity: Option<String>,
+
+	// My Xpath Parser currently doesn't support OR. So i'm just seperating it into two and combining.
+	#[scrape(xpath = r#"./div/span[2]/span/text()"#)]
+	#[scrape(transform = "transform_trim_opt")]
+	#[serde(skip)]
+	pub _pop_alt: Option<String>,
 
 	#[scrape(xpath = r#"./div/span[3]/text()"#)]
 	#[scrape(transform = "transform_trim_opt")]
@@ -79,6 +91,25 @@ fn transform_html(_: Option<String>) -> String {
 	String::new()
 }
 
+
+
+fn transform_title(value: Option<String>) -> String {
+	value.map(|v| v.trim().to_string()).unwrap_or_default()
+}
+
+fn transform_title2(value: Vec<String>) -> Vec<String> {
+	value.into_iter()
+		.filter_map(|v| {
+			let value = v.trim().to_string();
+
+			if value.is_empty() {
+				None
+			} else {
+				Some(value)
+			}
+		})
+		.collect()
+}
 
 fn transform_trim_opt(value: Option<String>) -> Option<String> {
 	value.map(|v| v.trim().to_string())

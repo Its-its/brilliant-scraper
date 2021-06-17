@@ -75,6 +75,20 @@ async fn step_1_grab_all_contributions() -> Result<Vec<CommunityListContribution
 		while let Some(next_page) = next_page_url.take() {
 			let mut list = scrape_community_url(&next_page, &client).await?;
 
+			// Correct contributions (my xpath parser doesn't support OR yet.) Mainly used for Discussions/Need Solutions
+			list.contributions.iter_mut()
+			.for_each(|c| {
+				if c.title.is_empty() && !c._title_alt.is_empty() {
+					c.title = c._title_alt.join("");
+					c._title_alt.clear();
+				}
+
+				// Exists and not empty.
+				if c._pop_alt.as_ref().map(|v| !v.is_empty()).unwrap_or_default() {
+					c.popularity = c._pop_alt.take();
+				}
+			});
+
 			if !should_skip_checked {
 				// If our cache already contains one of the URLs break out of the while loop and continue.
 				if let Some(found_cont) = list.contributions.first() {
