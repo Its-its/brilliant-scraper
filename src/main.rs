@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{error::Error, time::Duration};
 
 use reqwest::{Client, header::HeaderMap};
 
@@ -14,28 +14,26 @@ use scraping::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-	match std::env::args().last().as_deref() {
-		Some("web") => {
-			web::start().await?;
-		}
-
-		Some("scrape") => {
-			println!("Executing Scraper in 5 seconds. If this is an error Ctrl-C now.");
-			tokio::time::sleep(Duration::from_secs(5)).await;
-
-			println!("Executing Step 1: Grabbing ALL Contribution URLS and caching.");
-
-			let contributions = step_1_grab_all_contributions().await?;
-
-			println!("Executing Step 2: Scraping all contributions and placing them in archive folder.");
-
-			step_2_scrape_contributions(contributions).await?;
-		}
-
-		_ => panic!(r#"Please specify either "web" or "scrape" by doing "./executableName scrape""#)
+	if std::env::args().any(|v| &v == "web") {
+		web::start().await?;
 	}
 
-	Ok(())
+	if std::env::args().any(|v| &v == "scrape") {
+		println!("Executing Scraper in 5 seconds. If this is an error Ctrl-C now.");
+		tokio::time::sleep(Duration::from_secs(5)).await;
+
+		println!("Executing Step 1: Grabbing ALL Contribution URLS and caching.");
+
+		let contributions = step_1_grab_all_contributions().await?;
+
+		println!("Executing Step 2: Scraping all contributions and placing them in archive folder.");
+
+		step_2_scrape_contributions(contributions).await?;
+
+		return Ok(());
+	}
+
+	panic!(r#"Please specify either "web" or "scrape" by doing "./executableName scrape""#);
 }
 
 
@@ -56,7 +54,15 @@ async fn step_1_grab_all_contributions() -> Result<Vec<CommunityListContribution
 
 	let mut found: Vec<CommunityListContribution> = if does_contributions_file_exist().await {
 		println!(" - Contributions File already exists. Using it and checking if we're missing any problem pages.");
-		read_contributions_file().await?
+
+		let value = read_contributions_file().await?;
+
+		// Args Param to force cached without ensuring we have all data.
+		if std::env::args().any(|v| &v == "cached") {
+			return Ok(value);
+		}
+
+		value
 	} else {
 		Vec::new()
 	};
@@ -140,7 +146,7 @@ async fn step_2_scrape_contributions(contributions: Vec<CommunityListContributio
 	for contribution in contributions {
 		let mut problem = contribution.scrape_problem().await?;
 
-		println!("{:#?}", problem.images);
+		println!("Archiving: {}", contribution.url);
 
 		// Save Styles.
 		for style_url in problem.styles {
@@ -159,14 +165,18 @@ async fn step_2_scrape_contributions(contributions: Vec<CommunityListContributio
 			let image_url = correct_url(image_path.clone());
 
 			if !does_data_url_exist(&image_url).await? {
-				let data = reqwest::get(&image_url)
-					.await?
-					.bytes()
-					.await?;
+				match reqwest::get(&image_url).await {
+					Ok(resp) => {
+						let data = resp.bytes().await?;
 
-				// Replace external image with downloaded one.
-				if let Some(local_path) = save_data_to_directory(&image_url, &data).await? {
-					problem.html = problem.html.replace(&image_path, &local_path);
+						// Replace external image with downloaded one.
+						if let Some(local_path) = save_data_to_directory(&image_url, &data).await? {
+							problem.html = problem.html.replace(&image_path, &local_path);
+						}
+					}
+					Err(e) => {
+						eprintln!("\t Error Occurred While trying to request {:?}\n\t\t {:?}", image_url, e.source());
+					}
 				}
 			}
 		}
