@@ -10,7 +10,11 @@ Side Note: Unknown if this is all of them. But this is where mine ended.
 ## To run scraper (use cmd/terminal)
 ```bash
 ./scrape-brilliant scrape
+or
+./scrape-brilliant scrape no-cache-check
 ```
+You can use the arg "no-cache-check" to disable the saved cache checking. If you're using my contributions.cache I recommend using this arg.
+
 
 ## To run web server (use cmd/terminal)
 ```bash

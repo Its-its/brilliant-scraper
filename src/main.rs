@@ -58,7 +58,7 @@ async fn step_1_grab_all_contributions() -> Result<Vec<CommunityListContribution
 		let value = read_contributions_file().await?;
 
 		// Args Param to force cached without ensuring we have all data.
-		if std::env::args().any(|v| &v == "cached") {
+		if std::env::args().any(|v| &v == "no-cache-check") {
 			return Ok(value);
 		}
 
