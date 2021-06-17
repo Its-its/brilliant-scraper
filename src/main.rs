@@ -67,7 +67,7 @@ async fn step_1_grab_all_contributions() -> Result<Vec<CommunityListContribution
 		.cookie_store(true)
 		.build()?;
 
-	for (i, problem_list_url) in problem_urls.into_iter().enumerate() {
+	'base: for (i, problem_list_url) in problem_urls.into_iter().enumerate() {
 		let mut should_skip_checked = false;
 
 		let mut next_page_url = Some(problem_list_url.to_string());
@@ -76,10 +76,11 @@ async fn step_1_grab_all_contributions() -> Result<Vec<CommunityListContribution
 			let mut list = scrape_community_url(&next_page, &client).await?;
 
 			if !should_skip_checked {
-				// If our cache already contains one of the URLs break out of the while loop.
+				// If our cache already contains one of the URLs break out of the while loop and continue.
 				if let Some(found_cont) = list.contributions.first() {
-					if found.iter().any(|v| v.url == found_cont.url ) {
-						break;
+					if found.iter().any(|v| v.url == found_cont.url) {
+						println!(" - - Already cached: {:?}", next_page);
+						continue 'base;
 					}
 
 					should_skip_checked = true;
