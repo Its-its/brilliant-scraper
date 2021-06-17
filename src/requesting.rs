@@ -3,7 +3,7 @@ use std::{collections::HashMap, io::Cursor};
 use reqwest::Client;
 
 use serde::{Serialize, Deserialize};
-use scraper_main::{ScraperMain, xpather::parse_doc};
+use scraper_main::{ScraperMain, xpather::parse_document};
 
 use crate::scraping::CommunityList;
 
@@ -21,7 +21,7 @@ pub async fn scrape_community_url(url: &str, client: &Client) -> Result<Communit
 
 	let found = resp.actions.values().next().unwrap();
 
-	let doc = parse_doc(&mut Cursor::new(&found.new_html));
+	let doc = parse_document(&mut Cursor::new(&found.new_html))?;
 
 	let list = CommunityList::scrape(&doc, None)?;
 

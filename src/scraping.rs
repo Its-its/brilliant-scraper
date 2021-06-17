@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 use scraper_macros::Scraper;
-use scraper_main::{ConvertFromValue, ScraperMain, xpather::parse_doc};
+use scraper_main::{ConvertToValue, ScraperMain, xpather::parse_document};
 use std::io::Cursor;
 
 use crate::correct_url;
@@ -56,7 +56,7 @@ impl CommunityListContribution {
 	pub async fn scrape_problem(&self) -> Result<ContributionProblem, Box<dyn std::error::Error>> {
 		let resp = reqwest::get(&self.url).await?.text().await?;
 
-		let doc = parse_doc(&mut Cursor::new(&resp));
+		let doc = parse_document(&mut Cursor::new(&resp))?;
 
 		let mut program = ContributionProblem::scrape(&doc, None)?;
 		program.html = resp;
@@ -68,8 +68,7 @@ impl CommunityListContribution {
 
 #[derive(Debug, Scraper, Serialize, Deserialize)]
 pub struct ContributionProblem {
-	#[scrape(xpath = r#"/justignorethisIdontHaveAnIgnoreForMyScraper"#)]
-	#[scrape(transform = "transform_html")]
+	#[scrape(ignore)]
 	pub html: String,
 
 	#[scrape(xpath = r#"//link[@rel="stylesheet"]/@href"#)]
@@ -85,10 +84,6 @@ pub struct ContributionProblem {
 
 fn transform_styles(value: Vec<String>) -> Vec<String> {
 	value.into_iter().map(correct_url).collect()
-}
-
-fn transform_html(_: Option<String>) -> String {
-	String::new()
 }
 
 
