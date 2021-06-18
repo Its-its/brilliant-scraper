@@ -1,9 +1,12 @@
 # Brilliant.org community scraper
+**Answer scraping is not implemented. Only all the problems.**
+
 Used to scrape the Community problems page for all its' content. Will currently scrape the "New", "Popular", "Discussions", and "Needs Solution" Contributions
 
 Please ensure the ".contributions.cache" file is in your working directory so you don't have to re-scrape all the (121,258) contributions' urls again. It takes ~3 hour.
 
 Side Note: Unknown if this is all of them. But this is where mine ended.
+
 
 # Starting
 
